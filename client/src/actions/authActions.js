@@ -20,8 +20,7 @@ export const logoutFailure = createAction('auth/logout/failure');
 
 const getRefreshToken = () => {
   const user = JSON.parse(localStorage.getItem('user'));
-  if (!user)
-    return '';
+  if (!user) return '';
   return user.refreshJWT;
 };
 
@@ -67,13 +66,12 @@ export const refresh = () => async (dispatch) => {
 export const logout = () => async (dispatch) => {
   try {
     dispatch(logoutPending());
+    await authAPI.post('/logout', {
+      refreshJWT: getRefreshToken(),
+    });
     localStorage.removeItem('user');
     dispatch(logoutSuccess());
   } catch (err) {
     dispatch(logoutFailure(getErrorPayload(err)));
   }
 };
-
-
-
-
