@@ -10,6 +10,7 @@ const statusCodes = require('../utills/statusCodes');
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 jest.setTimeout(60000);
+jest.mock('redis', () => jest.requireActual('redis-mock'));
 
 let mongoServer;
 opts = {

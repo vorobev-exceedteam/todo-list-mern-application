@@ -1,1 +1,1 @@
-export const filterBadges = [ 'All', 'ToDo', 'Completed' ];
+export const filterBadges = ['All', 'ToDo', 'Completed'];

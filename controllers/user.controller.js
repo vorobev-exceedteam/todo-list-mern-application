@@ -2,10 +2,9 @@ const User = require('../models/user.model');
 const statusCodes = require('../utills/statusCodes');
 const createResponse = require('../utills/createResponse');
 const { ValidationError, RefreshedTokenInvalid } = require('../utills/Errors');
-const createTokens = require('../utills/createTokens');
-
-const jwt = require('jsonwebtoken');
+const createRedisTokens = require('../utills/createRedisTokens');
 const bcrypt = require('bcrypt');
+const destroyRedisTokens = require('../utills/destroyRedisTokens');
 
 exports.signup = async (req, res, next) => {
   const path = 'signup';
@@ -41,7 +40,7 @@ exports.signup = async (req, res, next) => {
   }
 };
 
-exports.login = async (req, res, next) => {
+exports.login = (jwtr) => async (req, res, next) => {
   const path = 'login';
   try {
     const user = await User.findOne({ name: req.body.name });
@@ -58,7 +57,8 @@ exports.login = async (req, res, next) => {
     if (!(await bcrypt.compare(req.body.password, user.passwordHash))) {
       return next(new ValidationError(path, [{ message: `Password is not valid`, key: 'password' }]));
     }
-    const [authToken, refreshToken] = createTokens({
+    await destroyRedisTokens(jwtr, user._id.toString());
+    const [authToken, refreshToken] = await createRedisTokens(jwtr, {
       id: user._id,
       name: user.name,
       email: user.email,
@@ -75,13 +75,13 @@ exports.login = async (req, res, next) => {
   }
 };
 
-exports.refresh = async (req, res, next) => {
+exports.refresh = (jwtr) => async (req, res, next) => {
   try {
     const receivedToken = req.body.refreshJWT;
     if (!receivedToken) {
       return next(new RefreshedTokenInvalid());
     }
-    const decoded = await jwt.verify(receivedToken, process.env.REFRESH_SECRET);
+    const decoded = await jwtr.verify(receivedToken, process.env.REFRESH_SECRET);
     const isTokenValid = await User.exists({
       _id: decoded.id,
       name: decoded.name,
@@ -91,7 +91,8 @@ exports.refresh = async (req, res, next) => {
     if (!isTokenValid) {
       return next(new RefreshedTokenInvalid());
     }
-    const [authToken, refreshToken] = createTokens({
+    await destroyRedisTokens(jwtr, decoded.id.toString());
+    const [authToken, refreshToken] = await createRedisTokens(jwtr, {
       id: decoded.id,
       name: decoded.name,
       email: decoded.email,
@@ -105,6 +106,28 @@ exports.refresh = async (req, res, next) => {
     );
   } catch (e) {
     e.tokenType = 'refresh';
+    next(e);
+  }
+};
+
+exports.logout = (jwtr) => async (req, res, next) => {
+  try {
+    const refreshToken = req.body.refreshJWT;
+    if (!refreshToken) {
+      return next(new RefreshedTokenInvalid());
+    }
+    try {
+    }
+    const decoded = await jwtr.verify(refreshToken, process.env.REFRESH_SECRET);
+    const isTokenValid = await User.exists({
+      _id: decoded.id,
+      name: decoded.name,
+      email: decoded.email,
+      passwordHash: decoded.password,
+    });
+    await destroyRedisTokens(jwtr, decoded.id.toString());
+  } catch (e) {
+    e.tokenType = 'logout';
     next(e);
   }
 };

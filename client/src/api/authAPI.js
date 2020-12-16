@@ -1,6 +1,6 @@
-import axios from "axios";
+import axios from 'axios';
 
 export default axios.create({
-    baseURL: '/auth',
-    responseType: "json"
+  baseURL: '/auth',
+  responseType: 'json',
 });

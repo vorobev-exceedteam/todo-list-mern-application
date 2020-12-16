@@ -4,6 +4,12 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 // const { NotFound } = require('./utills/Errors');
 const path = require('path');
+const redis = require('redis');
+const JWTR = require('jwt-redis').default;
+
+const redisClient = redis.createClient();
+
+const jwtr = new JWTR(redisClient);
 
 const taskRoutes = require('./routes/task.route');
 const authRoutes = require('./routes/user.route');
@@ -32,8 +38,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(express.static(path.join(__dirname, 'client', 'build')));
 
-app.use('/tasks', taskRoutes);
-app.use('/auth', authRoutes);
+app.use('/tasks', taskRoutes(jwtr));
+app.use('/auth', authRoutes(jwtr));
 
 // app.use('*', (req, res, next) => next(new NotFound('Route does not exist')));
 

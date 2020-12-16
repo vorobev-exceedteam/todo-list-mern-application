@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
+const jwtr = require('jwt-redis');
 const {
   GeneralError,
   InternalServerError,
@@ -21,7 +21,7 @@ const errorHandler = (err, req, res, next) => {
     case err instanceof mongoose.Error.ValidationError:
       error = new ValidationError(err.message);
       break;
-    case err instanceof jwt.TokenExpiredError:
+    case err instanceof jwtr.TokenDestroyedError:
       switch (err.tokenType) {
         case 'auth':
           error = new AuthTokenExpired();
@@ -34,7 +34,7 @@ const errorHandler = (err, req, res, next) => {
           break;
       }
       break;
-    case err instanceof jwt.JsonWebTokenError:
+    case err instanceof jwtr.TokenInvalidError:
       switch (err.tokenType) {
         case 'auth':
           error = new AuthTokenInvalid();
