@@ -113,19 +113,11 @@ exports.refresh = (jwtr) => async (req, res, next) => {
 exports.logout = (jwtr) => async (req, res, next) => {
   try {
     const refreshToken = req.body.refreshJWT;
-    if (!refreshToken) {
-      return next(new RefreshedTokenInvalid());
+    if (refreshToken) {
+      const decoded = await jwtr.decode(refreshToken, process.env.REFRESH_SECRET);
+      await destroyRedisTokens(jwtr, decoded.id.toString());
     }
-    try {
-    }
-    const decoded = await jwtr.verify(refreshToken, process.env.REFRESH_SECRET);
-    const isTokenValid = await User.exists({
-      _id: decoded.id,
-      name: decoded.name,
-      email: decoded.email,
-      passwordHash: decoded.password,
-    });
-    await destroyRedisTokens(jwtr, decoded.id.toString());
+    res.status(statusCodes.OK).json(createResponse('ok', 'Logout completed'));
   } catch (e) {
     e.tokenType = 'logout';
     next(e);
