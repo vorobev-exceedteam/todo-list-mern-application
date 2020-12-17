@@ -1,7 +1,9 @@
 const User = require('../models/user.model');
 const Task = require('../models/task.model');
-const createTokens = require('../utills/createTokens');
+const createRedisTokens = require('../utills/createRedisTokens');
 const bcrypt = require('bcrypt');
+const redis = require('redis');
+const JWTR = require('jwt-redis').default;
 
 const defaultUser = {
   name: 'test123',
@@ -93,12 +95,16 @@ const isAllTasksChecked = async (user) => {
 
 const getTokensForUser = async (user) => {
   const foundUser = await getUser(user);
-  return createTokens({
+  const redisClient = redis.createClient();
+  const jwtr = new JWTR(redisClient);
+  const tokens = await createRedisTokens(jwtr, {
     id: foundUser._id,
     name: foundUser.name,
     email: foundUser.email,
     password: foundUser.passwordHash,
   });
+  redisClient.quit();
+  return tokens;
 };
 
 const cleanExceptDefaultUser = async () => {

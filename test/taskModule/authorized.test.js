@@ -34,7 +34,8 @@ describe('Task module: operations with authorized user', () => {
     const response = await request(app)
       .post('/tasks/add')
       .send({ data: { name: 'test', checked: false }, authJWT: tokens[0] });
-    expect(await Task.exists({ userid: user.id, checked: false, name: 'test' })).toBeTruthy();
+    console.log(user);
+    expect(await Task.exists({ userid: user._id, checked: false, name: 'test' })).toBeTruthy();
     expect(response.body.status).not.toBe('error');
     expect(response.statusCode).toBe(statusCodes.CREATED);
   });
